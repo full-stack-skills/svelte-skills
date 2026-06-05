@@ -1,0 +1,15 @@
+{
+  "name": "svelte-skills",
+  "version": "1.0.0",
+  "description": "Svelte framework development skills",
+  "author": {
+    "name": "PartMeAI",
+    "email": "partmeai@gmail.com"
+  },
+  "homepage": "https://github.com/full-statck-skills/svelte-skills",
+  "repository": "https://github.com/full-statck-skills/svelte-skills",
+  "source": "./",
+  "skills": [
+    "./skills/svelte"
+  ]
+}
