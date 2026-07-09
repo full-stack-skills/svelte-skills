@@ -237,6 +237,24 @@ result.stats;        // 编译统计
 | 编译器报错 | 查看上方错误代码表 |
 | 运行时警告 | 检查 ownership 链 |
 
+## Examples
+
+Practical usage patterns with detailed explanations:
+
+- [examples/README.md](./examples/README.md) - Entry point
+- [examples/store-patterns.md](./examples/store-patterns.md) - Writable, readable, derived stores, auto-subscribe, cross-component sharing
+- [examples/motion.md](./examples/motion.md) - Tweened and spring animations with easing
+- [examples/transition.md](./examples/transition.md) - Built-in transitions, custom transitions, in/out transitions
+
+## References
+
+Complete API documentation:
+
+- [references/README.md](./references/README.md) - Entry point
+- [references/store-reference.md](./references/store-reference.md) - Store API signatures: writable, readable, derived, get
+- [references/motion-reference.md](./references/motion-reference.md) - Motion API: tweened, spring, easing functions
+- [references/transition-reference.md](./references/transition-reference.md) - Transition API: fade, fly, slide, scale, custom transitions
+
 ## Gotchas
 
 1. **`svelte/transition` 的 `css` 和 `tick` 互斥** — 两者只能用一个

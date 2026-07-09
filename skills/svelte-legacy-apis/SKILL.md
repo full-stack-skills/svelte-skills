@@ -332,3 +332,21 @@ A: 功能相似，但 `$derived` 是 Svelte 5 的 Runes API，更显式和可控
 
 **Q: Slot 和 Snippet 哪个更好？**
 A: Snippets 更强大灵活。Slot 适合简单内容传递；Snippet 可接收参数、可在定义处使用、类型安全更好。
+
+## Examples
+
+Practical examples for working with Legacy APIs:
+
+- [examples/README.md](./examples/README.md) - Examples entry point
+- [examples/migration-scripts.md](./examples/migration-scripts.md) - Migration workflows (svelte-migrate, let→$state, $:→$derived, etc.)
+- [examples/legacy-mode.md](./examples/legacy-mode.md) - Legacy mode usage, mixing legacy and runes
+- [examples/store-comparison.md](./examples/store-comparison.md) - Store patterns in Svelte 4 and Svelte 5
+
+## References
+
+Complete reference documentation:
+
+- [references/README.md](./references/README.md) - References entry point
+- [references/migration-reference.md](./references/migration-reference.md) - Complete migration reference with before/after code
+- [references/legacy-mode-reference.md](./references/legacy-mode-reference.md) - Legacy mode behavior and limitations
+- [references/store-reference.md](./references/store-reference.md) - Store API reference (writable, readable, derived, custom stores)

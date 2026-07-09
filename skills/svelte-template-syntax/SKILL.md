@@ -387,3 +387,26 @@ A: `{expr}` 自动 HTML 转义；`{@html expr}` 直接插入原始 HTML。原始
 
 **Q: 什么时候用 `{#key}`？**
 A: 当需要表达式变化时触发动画/重建时，例如路由切换、用户切换等场景。
+
+## Examples
+
+可执行的代码示例，见 `examples/` 目录：
+
+| 文件 | 内容 |
+|------|------|
+| `if-await-snippet.md` | {#if}/{#each}/{#await}/{#snippet} 基础到递归 |
+| `bind-directives.md` | bind:value/checked/group/files/this/offsetWidth 等 |
+| `event-handlers.md` | onclick、事件冒泡、委托、window/document 事件 |
+| `render-tags.md` | {@render}/{@html}/{@debug}/{@const}/{@attach} |
+
+## References
+
+深入技术参考，见 `references/` 目录：
+
+| 文件 | 内容 |
+|------|------|
+| `if-await-each.md` | {#if}/{#each}/{#await}/{:else}/{#key} 完整语法 |
+| `snippet-render.md` | Snippet 定义/调用/递归、@render/@const 类型签名 |
+| `bind-reference.md` | 所有 bind: 指令完整列表及适用元素 |
+| `event-reference.md` | onclick vs on:click、window/document、事件委托 |
+| `special-tags.md` | {@html}/{@debug}/{@attach}/svelte:element |

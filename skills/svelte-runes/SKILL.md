@@ -379,3 +379,27 @@ A: `$state.raw` 不对数组/对象创建深层代理，性能更好，但只能
 
 **Q: `$props` 能解构吗？**
 A: 可以，且支持默认值、重命名、rest 解构。
+
+## Examples
+
+可执行的代码示例，见 `examples/` 目录：
+
+| 文件 | 内容 |
+|------|------|
+| `state-patterns.md` | `$state` 基础、深层代理、类字段、跨模块共享 |
+| `derived-patterns.md` | `$derived` 基础、$derived.by、乐观 UI、解构派生 |
+| `effect-patterns.md` | `$effect` 基础、cleanup、pre、追踪规则、禁忌 |
+| `props-patterns.md` | `$props` 解构、$bindable、Rest Props、泛型组件 |
+
+## References
+
+深入技术参考，见 `references/` 目录：
+
+| 文件 | 内容 |
+|------|------|
+| `runes-overview.md` | Runes 整体架构、vs Legacy 对比、生命周期 |
+| `$state-deep.md` | Proxy 行为、$state.raw/snapshot/eager、类中 $state |
+| `$derived-deep.md` | 表达式 vs $derived.by、依赖追踪、可写派生 |
+| `$effect-deep.md` | pre/cleanup/root、追踪规则、常见错误 |
+| `$props-deep.md` | 解构语法、$bindable、Rest Props、泛型 |
+| `context-deep.md` | createContext vs setContext、类型安全、SSR |

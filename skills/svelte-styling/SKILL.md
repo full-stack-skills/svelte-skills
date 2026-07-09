@@ -198,3 +198,20 @@ A: 形如 `svelte-123xyz` 的哈希，组件级唯一。
 
 **Q: 可以同时用 scoped 和全局样式吗？**
 A: 可以，同一 `<style>` 中可混合使用 scoped 选择器和 `:global`。
+
+## Examples
+
+| File | Description |
+|------|-------------|
+| [examples/README.md](./examples/README.md) | Entry point listing all example files with descriptions |
+| [examples/scoped-styles.md](./examples/scoped-styles.md) | Scoped styles, :global(), CSS custom properties, class directive patterns |
+| [examples/tailwind.md](./examples/tailwind.md) | Tailwind CSS integration with dynamic classes and dark mode |
+
+## References
+
+| File | Description |
+|------|-------------|
+| [references/README.md](./references/README.md) | Entry point listing all reference files with descriptions |
+| [references/scoped-deep.md](./references/scoped-deep.md) | Deep dive into scoping mechanism, :global() variants, style isolation |
+| [references/css-custom-properties.md](./references/css-custom-properties.md) | CSS Custom Properties: passing, reading, cascading, dynamic updates |
+| [references/class-directive.md](./references/class-directive.md) | class vs class: directive, ClassValue types, clsx patterns
