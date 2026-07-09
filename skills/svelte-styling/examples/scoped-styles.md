@@ -2,6 +2,27 @@
 
 This file covers all scoped styling patterns in Svelte 5.
 
+## Table of Contents
+
+- [Basic Scoped Style](#basic-scoped-style)
+- [Pseudo-classes](#pseudo-classes-hover-first-child-etc)
+- [:global() Single Selector](#global-single-selector)
+- [:global() Nested](#global-nested-parent-wraps-child)
+- [:global() Block Syntax](#global-block-syntax)
+- [CSS Custom Properties Passing](#css-custom-properties--var-passing-from-parent)
+- [CSS Custom Properties Reading](#css-custom-properties-reading-inside-component)
+- [class Attribute Object Form](#class-attribute-with-object-form)
+- [class Attribute Array Form](#class-attribute-with-array-form)
+- [Tailwind Integration](#tailwind-integration)
+- [Combining Multiple Patterns](#combining-multiple-patterns)
+- [Specificity: Scoped vs Global](#specificity-scoped-vs-global)
+- [Specificity: :where() Trick](#specificity-where-trick-for-lower-scope-specificity)
+- [When Styles Don't Apply](#when-styles-dont-apply)
+- [Compiled CSS: What the Compiler Emits](#compiled-css-what-the-compiler-emits)
+- [Class-only / Tag-only Selectors in Scope](#class-only-and-tag-only-scoped-selectors)
+- [Slot Children and Style Pierce](#slot-children-and-style-pierce)
+- [Svelte Wrapper Element Caveat](#svelte-css-wrapper-element)
+
 ## Basic Scoped Style
 
 Styles in `<style>` blocks are automatically scoped to the component.
@@ -489,3 +510,228 @@ See [tailwind.md](./tailwind.md) for comprehensive Tailwind examples.
   <slot />
 </div>
 ```
+
+---
+
+## Specificity: Scoped vs Global
+
+Every scoped selector picks up an **extra class** (the scope hash), so its specificity is **0-1-0** higher than the same selector in a global stylesheet. This means a scoped `p` rule beats a global `p` rule — even when the global stylesheet is loaded *after* the component.
+
+```svelte
+<!-- Card.svelte -->
+<style>
+  /* 0-1-1 specificity (one tag + one class).
+     This wins over the global p {} below. */
+  p { color: burlywood; }
+</style>
+
+<p>This paragraph is burlywood, not red.</p>
+```
+
+```css
+/* global.css (loaded later) */
+p { color: red; }
+```
+
+Order of the stylesheet does not matter — the scoped class tips the cascade.
+
+> **Tip:** If you want a *global* stylesheet to be able to override a scoped rule, use `:where(.svelte-xyz123)` (see next section) or be more specific in the global rule.
+
+---
+
+## Specificity: `:where()` Trick for Lower Scope Specificity
+
+The compiler is smart: when a scope class must be added to a selector *multiple times*, only the **first** occurrence actually contributes to specificity. All subsequent occurrences are wrapped in `:where(.svelte-xyz123)`, which has **zero** specificity.
+
+```svelte
+<style>
+  /* Written:    .card .title
+     Compiled:   .card.svelte-xyz123 :where(.svelte-xyz123) .title.svelte-xyz123
+     The middle :where() doesn't add specificity. */
+  .card .title { font-weight: 700; }
+</style>
+```
+
+The practical consequence is that **duplicate scope classes don't compound**. Whether the selector has one or many class occurrences, it only counts as +0-1-0 once.
+
+This is what lets you write deeply nested selectors (`.a .b .c`) without runaway specificity — a global `.title { font-weight: 400 }` in a low-specificity reset can still win.
+
+---
+
+## When Styles Don't Apply
+
+A common source of confusion: a scoped selector "looks right" but does nothing. Check these cases:
+
+### 1. The element is rendered by a child component
+
+A parent cannot reach into a child component with its scoped selector — the child has its own scope hash.
+
+```svelte
+<!-- Parent.svelte -->
+<style>
+  /* Does NOT style the <p> inside Child */
+  .container p { color: red; }
+</style>
+
+<div class="container">
+  <Child />
+</div>
+```
+
+```svelte
+<!-- Child.svelte -->
+<div class="container">  <!-- different scope -->
+  <p>This stays default color</p>
+</div>
+```
+
+**Fix:** Use CSS custom properties (preferred) or `:global()`.
+
+### 2. The class is added programmatically
+
+If a library adds `class="foo"` to your element at runtime, the scoped `.foo` rule still works (the compiler adds the scope hash to the *element*, not the class). But if the library only adds a class to a child it renders internally, scoped styles won't reach it.
+
+### 3. `{@html ...}` content
+
+Content rendered via `{@html}` has no scope hash. Scoped selectors won't apply — use `:global(...)` instead (and never do this with untrusted input).
+
+### 4. The element doesn't actually exist in the template
+
+The compiler only adds the scope hash to elements that match a selector **and** that exist in the template. Dead styles get tree-shaken.
+
+### 5. The selector is more specific elsewhere
+
+If a parent already has a more specific selector that matches (e.g. `body .container p`), the scoped `.container p` (0-2-1) loses to `body .container p` (0-2-1)... actually they tie, and source order wins. Use `:global()` or add specificity deliberately.
+
+---
+
+## Compiled CSS: What the Compiler Emits
+
+A useful mental model: think of scoping as a **two-step transform**.
+
+1. **Selector transform** — every selector that targets a real element gets the scope class appended.
+2. **Element transform** — every element in the template gets the scope class added to its `class` attribute.
+
+```svelte
+<!-- Source -->
+<style>
+  .title { color: blue; }
+  p { font-size: 1rem; }
+</style>
+
+<h1 class="title">Hi</h1>
+<p>Hello</p>
+```
+
+```js
+// Compiled CSS (inside <head> or extracted)
+.svelte-abc123 .title, .title.svelte-abc123 { color: blue; }
+p.svelte-abc123 { font-size: 1rem; }
+```
+
+```html
+<!-- Compiled DOM -->
+<h1 class="title svelte-abc123">Hi</h1>
+<p class="svelte-abc123">Hello</p>
+```
+
+Notice: the `.title` rule only matches if **either** the ancestor or the element itself has the scope class — that's a quirk of how Svelte walks parent selectors. In practice, the element class is always added, so it matches.
+
+---
+
+## Class-only and Tag-only Scoped Selectors
+
+You can write both **class** and **tag** selectors in scoped CSS. Both receive the scope hash.
+
+```svelte
+<style>
+  /* Both get scope class added */
+  p { line-height: 1.5; }
+  .lead { font-size: 1.25rem; }
+  a { color: tomato; }
+  ul, ol { padding-left: 1.5rem; }
+</style>
+
+<p class="lead">A lead paragraph</p>
+<a href="...">Link</a>
+<ul><li>One</li></ul>
+```
+
+**Gotcha:** if your component has zero `<a>` elements in its template, the `a` rule still compiles, but the compiler may warn or strip it. The compiler only adds the scope class to elements that **actually appear** in the template.
+
+---
+
+## Slot Children and Style Pierce
+
+Slotted children belong to the *parent's* scope, not the child's. This is intentional: the parent controls how slotted content is styled.
+
+```svelte
+<!-- Card.svelte -->
+<style>
+  /* This DOES style the slot child, because slot content
+     is rendered in the parent's scope. */
+  .card ::slotted(p) {
+    color: blue;
+  }
+</style>
+
+<div class="card">
+  <slot />
+</div>
+```
+
+```svelte
+<!-- App.svelte -->
+<Card>
+  <p>Slotted paragraph — styled by Card's CSS</p>
+</Card>
+```
+
+For more targeted slot styling, use `::slotted(selector)` from the parent. Note that `::slotted()` only accepts a compound selector and the *outermost* element.
+
+---
+
+## Svelte CSS Wrapper Element
+
+When you pass `--css-custom-properties` to a component, Svelte wraps the component in a `svelte-css-wrapper` element (or `<g>` for SVG). This wrapper has the inline `style` attribute carrying the custom properties.
+
+```svelte
+<!-- Source -->
+<Slider --track-color="black" />
+```
+
+```svelte
+<!-- Compiled -->
+<svelte-css-wrapper style="display: contents; --track-color: black;">
+  <Slider />
+</svelte-css-wrapper>
+```
+
+Why this matters:
+
+- The wrapper is a real DOM element. CSS selectors like `> .slider` (child combinator) on the parent **break** because the slider is no longer a direct child.
+- For most cases `display: contents` makes the wrapper invisible to layout — but `getBoundingClientRect` and `>` combinators still see it.
+- The `svelte-css-wrapper` element itself is not styled; it exists only to host the CSS variables.
+
+```svelte
+<!-- This selector will NOT match Slider directly -->
+<div class="layout">
+  <Slider />
+</div>
+
+<style>
+  .layout > * { padding: 1rem; }  /* matches svelte-css-wrapper, not Slider */
+</style>
+```
+
+Workarounds: target a class on the wrapper's parent, or use a descendant combinator (`.layout .slider`).
+
+---
+
+## See also
+
+- [scoped-keyframes.md](./scoped-keyframes.md) — `@keyframes` naming and the `-global-` prefix
+- [global-patterns.md](./global-patterns.md) — `:global(...)` single, nested, block
+- [nested-style.md](./nested-style.md) — raw `<style>` tags inside the template
+- [style-directive.md](./style-directive.md) — `style:color`, `style:--var`, `|important`
+

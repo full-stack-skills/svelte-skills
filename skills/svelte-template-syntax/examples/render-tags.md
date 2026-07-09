@@ -1,25 +1,32 @@
-# {@render} / {@html} / {@debug} / {@const}
+# {@render} / {@html} / {@debug} / {@const} / {@attach}
+
+Svelte 5 中所有以 `@` 开头的特殊模板标签。
 
 ## 1. {@render} 调用 Snippet
 
 ```svelte
-{#snippet header(title)}
-  <h1>{title}</h1>
+{#snippet sum(a, b)}
+  <p>{a} + {b} = {a + b}</p>
 {/snippet}
 
-{@render header('Welcome')}
-{@render header('About')}
+{@render sum(1, 2)}
+{@render sum(3, 4)}
+{@render sum(5, 6)}
 ```
+
+> 表达式可以是标识符或任意 JS 表达式：`{@render (cond ? a : b)()}`。
 
 ## 2. {@render} + children
 
 ```svelte
 <!-- Modal.svelte -->
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   let {
     title,
     children
-  }: { title: string; children: import('svelte').Snippet } = $props();
+  }: { title: string; children: Snippet } = $props();
 </script>
 
 <div class="modal">
@@ -30,7 +37,7 @@
 <!-- Parent.svelte -->
 <Modal title="Info">
   {#snippet children()}
-    <p>Some content here</p>
+    <p>content</p>
   {/snippet}
 </Modal>
 ```
@@ -51,7 +58,21 @@
 {/if}
 ```
 
-## 4. {@html} 渲染 HTML 字符串
+## 4. {@render} 可选 snippet
+
+```svelte
+<!-- children 是可选 prop -->
+{@render children?.()}
+
+<!-- 或用 #if 提供 fallback -->
+{#if children}
+  {@render children()}
+{:else}
+  <p>fallback content</p>
+{/if}
+```
+
+## 5. {@html} 原始 HTML
 
 ```svelte
 <script>
@@ -61,80 +82,127 @@
 {@html html}
 ```
 
-⚠️ **安全警告**：只用于可信内容，XSS 风险：
+⚠️ **安全警告**：只对可信内容使用，XSS 风险：
 ```svelte
 <!-- ❌ 危险：用户输入未经转义 -->
 {@html userInput}
 
-<!-- ✅ 安全：确保内容可信 -->
+<!-- ✅ 安全 -->
 {@html sanitize(userInput)}
 ```
 
-## 5. {@debug} 开发调试
+注意：
+- 表达式必须**是完整、独立**的 HTML 字符串 — 跨 `{@html}` 的标签不会拼接
+- 不会编译 Svelte 代码
+- **不受 Svelte scoped 样式影响** — 需用 `:global` 选择器
+
+```svelte
+<!-- ❌ scoped 样式对 {@html} 内的元素不生效 -->
+<style>
+  article a { color: hotpink }  /* 不会匹配 {@html} 内的 a */
+</style>
+
+<!-- ✅ 用 :global -->
+<style>
+  article :global(a) { color: hotpink }
+</style>
+```
+
+## 6. {@debug} 开发调试
 
 ```svelte
 <script>
   let count = $state(0);
-  let name = $state('Alice');
+  let user = $state({ name: 'Ada' });
 </script>
 
-<!-- count 或 name 变化时在控制台打印 -->
-{@debug count, name}
+{@debug count, user}
+<h1>{user.name}</h1>
+```
 
-<!-- 等价于： -->
+`{@debug var1, var2, ...}` 会在任一变量变化时打印当前值，并在 devtools 打开时暂停。
+
+无参数形式：
+```svelte
 {@debug}
-
-<p>{count} - {name}</p>
+<!-- 任意响应式 state 变化时触发 -->
 ```
 
-## 6. {@debug} 自定义标签
+**限制**：只接受变量名（逗号分隔），不接受表达式。
 
 ```svelte
-{@debug count, name}
+<!-- ✅ -->
+{@debug user}
+{@debug user1, user2}
 
-<!-- 控制台输出： -->
-<!-- {count: 0, name: "Alice"} -->
+<!-- ❌ 不编译 -->
+{@debug user.firstname}
+{@debug myArray[0]}
+{@debug !isReady}
+{@debug typeof user === 'object'}
 ```
 
-## 7. {@const} 模板内常量
+## 7. {@const} 模板常量
+
+> ⚠️ Legacy 语法。Svelte 5.56+ 推荐用 `{const x = ...}` 声明标签。
 
 ```svelte
-{#each items as item}
-  {@const doubled = item.price * 2}
-  <p>{item.name}: ${doubled}</p>
+{#each boxes as box}
+  {@const area = box.width * box.height}
+  {box.width} * {box.height} = {area}
 {/each}
 ```
 
-## 8. {@const} + 条件计算
+**仅允许**作为以下块的直接子元素：
+- `{#if ...}`
+- `{#each ...}`
+- `{#snippet ...}`
+- `<Component />`
+- `<svelte:boundary>`
+
+## 8. {let/const} 声明标签（Svelte 5.56+）
 
 ```svelte
-{#if showPrices}
-  {#each items as item}
-    {@const discount = item.price * 0.9}
-    <p>
-      {item.name}:
-      <s>${item.price}</s>
-      ${discount.toFixed(2)}
-    </p>
-  {/each}
+{#each boxes as box}
+  {const area = box.width * box.height}
+  {const label = `${box.width} ⨉ ${box.height} = ${area}`}
+  <p>{label}</p>
+{/each}
+```
+
+可在组件**任意位置**使用。引用外部值，作用域为词法兄弟/子节点。
+
+### 响应式声明
+
+```svelte
+<script>
+  let user = $state({ name: 'Svelte' });
+  let editing = $state(false);
+</script>
+
+{#if editing}
+  {let name = $state(user.name)}
+  {const greeting = $derived(`Hello ${name}`)}
+
+  <input bind:value={name} />
+  <p>{greeting}</p>
 {/if}
 ```
 
-## 9. {@const} 在 {#each} 中
+## 9. {@attach}（替代 use:action）
 
 ```svelte
-{#each users as user}
-  {@const isAdmin = user.role === 'admin'}
-  <div class:admin={isAdmin}>
-    {user.name}
-    {#if isAdmin}
-      <span>⭐</span>
-    {/if}
-  </div>
-{/each}
+<script>
+  import { initializeChart } from './chart.js';
+  let data = $state([1, 2, 3]);
+</script>
+
+<div {@attach initializeChart(data)}></div>
 ```
 
-## 10. 组合：{@render} + {@const}
+详细见 `attachments.md`。
+
+## 10. 组合示例
 
 ```svelte
 {#snippet itemCard(item)}
@@ -142,24 +210,12 @@
   <div class="card">
     <span class="tag">{tag}</span>
     <h3>{item.title}</h3>
-    <p>{item.description}</p>
+    {@html item.body}  <!-- 假定已 sanitize -->
+    <pre>{@debug}</pre>
   </div>
 {/snippet}
 
 {#each items as item (item.id)}
   {@render itemCard(item)}
 {/each}
-```
-
-## 11. {@attach}（替代 use:action）
-
-```svelte
-<script>
-  import { initializeChart } from './chart.js';
-
-  let data = $state([1, 2, 3]);
-</script>
-
-<!-- 替代 Svelte 4 的 use:initializeChart -->
-<div {@attach initializeChart(data)}></div>
 ```

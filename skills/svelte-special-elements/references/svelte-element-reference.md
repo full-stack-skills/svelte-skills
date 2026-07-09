@@ -283,14 +283,16 @@ In server-side rendering, `svelte:head` content is exposed separately and not in
 
 Captures errors and pending states in a portion of the component tree (Svelte 5.3+).
 
+> Full reference: see [boundary-reference.md](./boundary-reference.md). Practical examples: [boundary-examples.md](../examples/boundary-examples.md).
+
 ### Syntax
 
 ```svelte
 <svelte:boundary onerror={handler}>
   <Component />
 
-  {#snippet failed(error)}
-    <p>Error: {error.message}</p>
+  {#snippet failed(error, reset)}
+    <button onclick={reset}>oops! try again</button>
   {/snippet}
 
   {#snippet pending()}
@@ -299,17 +301,37 @@ Captures errors and pending states in a portion of the component tree (Svelte 5.
 </svelte:boundary>
 ```
 
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pending` | `Snippet` | Shown until all `await`s inside the boundary resolve (initial render only). |
+| `failed` | `Snippet<[error, reset]>` | Shown when an error is thrown inside the boundary. |
+| `onerror` | `(error, reset) => void` | Called alongside `failed`; useful for error reporting. |
+
 ### What is Caught
 
 - Synchronous errors during rendering
-- Async errors from Promises
-- Pending states from `{#await}` blocks
+- Async errors from rejected Promises / `await`
+- Errors inside `$effect`s
+- `pending` snippet during the initial render only
 
 ### What is NOT Caught
 
 - Errors inside event handlers
-- Errors inside `setTimeout`, `setInterval`
+- Errors inside `setTimeout`, `setInterval`, or async work kicked off from an event
 - Errors in code outside the boundary
+- Errors that escape the `failed` snippet / `onerror` will be forwarded to a parent boundary
+
+### SSR (`transformError`, Svelte 5.51+)
+
+Pass `transformError` to `render()` / `mount()` / `hydrate()` to control what the `failed` snippet receives on the server. The function must return a **JSON-stringifiable** object:
+
+```js
+const { head, body } = await render(App, {
+  transformError: (error) => ({ message: 'An error occurred!' })
+});
+```
 
 ---
 

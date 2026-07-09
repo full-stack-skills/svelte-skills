@@ -4,67 +4,25 @@ Advanced TypeScript patterns for Svelte 5: generics, the `Component` type, `svel
 
 ---
 
-## 1. `<script lang="ts">` and Type-Only Features
+## 1. `<script lang="ts">` and Preprocessor Setup
 
-Svelte natively supports TypeScript. Just add `lang="ts"` and use type-only features (type annotations, interfaces, generics). Features that compile to runtime code (enums, parameter properties, post-TC39-stage-4 syntax) require a preprocessor.
+Add `lang="ts"` to use type-only features (annotations, interfaces, generics). Runtime-emitting features (enum, parameter properties with initializers, anything beyond TC39 stage 4) need a preprocessor:
 
 ```svelte
 <script lang="ts">
   let name: string = 'world';
-
-  function greet(name: string) {
-    alert(`Hello, ${name}!`);
-  }
+  function greet(name: string) { alert(`Hello, ${name}!`); }
 </script>
-
 <button onclick={(e: Event) => greet((e.target as HTMLElement).innerText)}>
   {name}
 </button>
 ```
 
-> The Svelte compiler uses Acorn to parse JS. Anything beyond TC39 stage 4 (e.g. enum, `private` constructor modifiers) needs `vitePreprocess({ script: true })` or `svelte-preprocess`.
+Configure `vitePreprocess({ script: true })` in `svelte.config.js` (Vite / SvelteKit). For Rollup / Webpack, install `typescript` + `svelte-preprocess`. Svelte's JS parser is Acorn — anything past stage 4 triggers preprocessor needs.
 
 ---
 
-## 2. Preprocessor Setup with Vite (For Non-Type-Only TS)
-
-When you need enums, parameter properties, or other TypeScript features that emit code, configure `vitePreprocess` in `svelte.config.js`:
-
-```js
-/// file: svelte.config.js
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-
-const config = {
-  preprocess: vitePreprocess({ script: true })
-};
-
-export default config;
-```
-
-For non-Vite toolchains (Rollup, Webpack), use `svelte-preprocess`:
-
-```bash
-npm install -D typescript svelte-preprocess
-```
-
-```js
-// rollup.config.js
-import sveltePreprocess from 'svelte-preprocess';
-
-export default {
-  plugins: [
-    svelte({
-      preprocess: sveltePreprocess()
-    })
-  ]
-};
-```
-
----
-
-## 3. `tsconfig.json` Settings for Svelte
-
-A Svelte-friendly `tsconfig.json` baseline:
+## 2. `tsconfig.json` Settings
 
 ```json
 {
@@ -76,24 +34,17 @@ A Svelte-friendly `tsconfig.json` baseline:
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "checkJs": true
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }
 ```
 
-Key flags:
-
-- `target: "ES2015"` (or higher) — keeps classes as classes, not transpiled to functions
-- `isolatedModules: true` — Svelte/Vite compile each file in isolation
-- `verbatimModuleSyntax: true` — leaves imports intact for the bundler to handle
-- `strict: true` — catch null/undefined issues early
+Key flags: `target: "ES2015"`+ (keeps classes), `isolatedModules: true` (per-file compile), `verbatimModuleSyntax: true` (preserves imports), `strict: true` (null checks).
 
 ---
 
-## 4. Typing `$props` with an Interface
+## 3. Typing `$props` with an Interface
 
 The cleanest pattern for typed props is an `interface Props` (or `type Props`):
 
@@ -127,7 +78,7 @@ The `[key: string]: unknown` index signature lets the rest spread work with arbi
 
 ---
 
-## 5. Generic `$props` — Type-Safe List Component
+## 4. Generic `$props` — Type-Safe List Component
 
 The `generics` attribute on `<script>` declares type parameters — same syntax as between `<...>` of a generic function. Use `extends`, multiple parameters, and fallbacks freely.
 
@@ -166,7 +117,7 @@ Multiple generics with a constraint:
 
 ---
 
-## 6. Typing Wrapper Components (Button Wrapping `<button>`)
+## 5. Typing Wrapper Components
 
 For components that wrap a native element, use the dedicated interfaces from `svelte/elements`:
 
@@ -174,70 +125,38 @@ For components that wrap a native element, use the dedicated interfaces from `sv
 <!-- Button.svelte -->
 <script lang="ts">
   import type { HTMLButtonAttributes } from 'svelte/elements';
-
   let { children, ...rest }: HTMLButtonAttributes = $props();
 </script>
-
-<button {...rest}>
-  {@render children?.()}
-</button>
+<button {...rest}>{@render children?.()}</button>
 ```
 
-For elements without a dedicated interface, use the `SvelteHTMLElements` index:
-
-```svelte
-<script lang="ts">
-  import type { SvelteHTMLElements } from 'svelte/elements';
-
-  let { children, ...rest }: SvelteHTMLElements['div'] = $props();
-</script>
-
-<div {...rest}>
-  {@render children?.()}
-</div>
-```
-
-Extending with custom props:
+For elements without a dedicated interface, use `SvelteHTMLElements['div']`. To add custom props, extend:
 
 ```svelte
 <script lang="ts">
   import type { HTMLButtonAttributes } from 'svelte/elements';
-
-  interface Props extends HTMLButtonAttributes {
-    variant: 'primary' | 'secondary';
-  }
-
+  interface Props extends HTMLButtonAttributes { variant: 'primary' | 'secondary'; }
   let { variant, children, ...rest }: Props = $props();
 </script>
-
-<button {...rest} data-variant={variant}>
-  {@render children?.()}
-</button>
+<button {...rest} data-variant={variant}>{@render children?.()}</button>
 ```
 
 ---
 
-## 7. The `Component` Type for Dynamic Components
+## 6. The `Component` Type for Dynamic Components
 
 `Component` is the Svelte 5 type for components (replacing `SvelteComponent`). Use it to constrain what components a prop can accept:
 
 ```svelte
-<!-- Container.svelte -->
 <script lang="ts">
   import type { Component } from 'svelte';
-
-  interface Props {
-    // Only components that accept a `prop: string` can be passed
-    DynamicComponent: Component<{ prop: string }>;
-  }
-
+  interface Props { DynamicComponent: Component<{ prop: string }>; }
   let { DynamicComponent }: Props = $props();
 </script>
-
 <DynamicComponent prop="foo" />
 ```
 
-Use `ComponentProps<T>` to extract the props of an existing component:
+`ComponentProps<T>` extracts the props of an existing component:
 
 ```ts
 import type { Component, ComponentProps } from 'svelte';
@@ -248,28 +167,15 @@ function withProps<TComponent extends Component<any>>(
   props: ComponentProps<TComponent>
 ) {}
 
-// Errors if props don't match
+// Type-errors if props don't match
 withProps(MyComponent, { foo: 'bar' });
 ```
 
-The constructor/instance types:
-
-```svelte
-<script lang="ts">
-  import MyComponent from './MyComponent.svelte';
-
-  let componentConstructor: typeof MyComponent = MyComponent;
-  let componentInstance: MyComponent;
-</script>
-
-<MyComponent bind:this={componentInstance} />
-```
-
-> In Svelte 4, components were of type `SvelteComponent` (legacy).
+Constructor vs instance: `let ctor: typeof MyComponent = MyComponent;` and `let inst: MyComponent;` then `<MyComponent bind:this={inst} />`.
 
 ---
 
-## 8. Typing `$state` in Classes (with `as` cast)
+## 7. Typing `$state` in Classes (with `as` cast)
 
 `$state` works in `.svelte.ts` classes. If you don't supply an initial value, TypeScript widens the type to include `undefined`:
 
@@ -328,7 +234,7 @@ export class Counter {
 
 ---
 
-## 9. Enhancing Built-in DOM Types (Augmenting `svelte/elements`)
+## 8. Enhancing Built-in DOM Types (Augmenting `svelte/elements`)
 
 If you use a custom element, experimental attribute, or a custom event from an action, augment `svelte/elements`:
 
@@ -374,88 +280,51 @@ Now usage is fully typed:
 
 ---
 
-## 10. `svelte-check` for CI Integration
+## 9. `svelte-check` for CI Integration
 
-`svelte-check` is the CLI companion to the Svelte VS Code extension. Run it in CI to catch type errors and Svelte-specific issues:
+`svelte-check` is the CLI companion to the Svelte VS Code extension. Run it in CI to catch type errors and Svelte-specific issues (a11y warnings, unused CSS selectors, invalid syntax):
 
 ```bash
-# Install
 npm install -D svelte-check
-
-# Run
 npx svelte-check --tsconfig ./tsconfig.json
-
-# Add to package.json scripts
-{
-  "scripts": {
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch"
-  }
-}
 ```
 
-In CI:
+Add to `package.json`:
 
-```yaml
-# .github/workflows/ci.yml
-- run: npm run check
-- run: npm run build
-- run: npm test
+```json
+{ "scripts": { "check": "svelte-check --tsconfig ./tsconfig.json" } }
 ```
 
-`svelte-check` reports:
-- TypeScript errors inside `.svelte` files
-- A11y warnings (missing `alt`, button types, etc.)
-- Unused CSS selectors
-- Unused script exports
-- Invalid Svelte syntax
+In CI, run `npm run check` before `npm run build` / `npm test`.
 
 ---
 
-## 11. Bindable Props with Type Safety
+## 10. Bindable Props with Type Safety
 
-`$bindable()` opts a prop into two-way binding. Type it the same way you type any other prop:
+`$bindable()` opts a prop into two-way binding:
 
 ```svelte
 <!-- TextField.svelte -->
 <script lang="ts">
-  interface Props {
-    value: string;
-    placeholder?: string;
-  }
-
+  interface Props { value: string; placeholder?: string; }
   let { value = $bindable(''), placeholder = '' }: Props = $props();
 </script>
-
 <input bind:value {placeholder} />
 ```
 
 ```svelte
-<!-- Usage -->
 <script lang="ts">
   let text = $state('initial');
 </script>
-
 <TextField bind:value={text} />
 <p>{text}</p>
 ```
 
-Bindable with a default fallback:
-
-```svelte
-<script lang="ts">
-  interface Props {
-    count?: number;
-  }
-  let { count = $bindable(0) }: Props = $props();
-</script>
-
-<button onclick={() => count++}>{count}</button>
-```
+`$bindable(default)` provides the value used when the parent doesn't pass anything.
 
 ---
 
-## 12. Action Type with Parameter
+## 11. Action Type with Parameter
 
 `Action<HTMLElement, ParameterType>` types custom actions so the parameter is checked at the use site:
 
@@ -498,62 +367,31 @@ Action with a richer parameter object:
 
 ---
 
-## 13. `import type` and Type-Only Exports
+## 12. `import type` and Type-Only Exports
 
-Use `import type` to keep type-only imports out of the runtime bundle:
+`import type` keeps type-only imports out of the runtime bundle:
 
 ```svelte
 <script lang="ts">
-  // Type-only — stripped at build time
-  import type { Snippet, Component } from 'svelte';
-
-  // Value import — kept in bundle
-  import { onMount, flushSync } from 'svelte';
+  import type { Snippet, Component } from 'svelte'; // stripped at build
+  import { onMount, flushSync } from 'svelte';        // kept in bundle
 </script>
 ```
 
-In a separate types file:
-
-```ts
-// src/lib/types.ts
-import type { Snippet, Component } from 'svelte';
-
-export interface ButtonProps {
-  variant?: 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
-  children: Snippet;
-}
-
-export type { Component };
-```
-
-> `verbatimModuleSyntax: true` in `tsconfig.json` enforces this distinction and prevents accidental value imports of types.
+For shared types, put them in a dedicated `.ts` file with `import type` for types and `export type { ... }` for re-exports. `verbatimModuleSyntax: true` in `tsconfig.json` enforces this distinction.
 
 ---
 
-## 14. Form State with Strict Types
-
-A common typed form pattern:
+## 13. Form State with Strict Types
 
 ```svelte
 <script lang="ts">
-  interface FormData {
-    name: string;
-    email: string;
-    agree: boolean;
-  }
-
-  let form = $state<FormData>({
-    name: '',
-    email: '',
-    agree: false
-  });
-
+  interface FormData { name: string; email: string; agree: boolean; }
+  let form = $state<FormData>({ name: '', email: '', agree: false });
   let errors = $state<Partial<Record<keyof FormData, string>>>({});
 
   function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    // validate
     if (!form.email.includes('@')) errors.email = 'Invalid email';
   }
 </script>
@@ -561,10 +399,7 @@ A common typed form pattern:
 <form onsubmit={handleSubmit}>
   <input bind:value={form.name} />
   <input bind:value={form.email} type="email" />
-  <label>
-    <input bind:checked={form.agree} type="checkbox" />
-    Agree
-  </label>
+  <label><input bind:checked={form.agree} type="checkbox" /> Agree</label>
   {#if errors.email}<p class="err">{errors.email}</p>{/if}
   <button type="submit">Save</button>
 </form>
@@ -572,7 +407,7 @@ A common typed form pattern:
 
 ---
 
-## 15. Typing `bind:this` to Component Instances
+## 14. Typing `bind:this` to Component Instances
 
 ```svelte
 <script lang="ts">
@@ -583,20 +418,7 @@ A common typed form pattern:
 </script>
 
 <Modal bind:this={modal} open={false} />
-
-<button onclick={() => modal?.$set({ open: true })}>
-  Open Modal
-</button>
+<button onclick={() => modal?.$set({ open: true })}>Open Modal</button>
 ```
 
-For a strongly-typed instance, use the default export's instance type:
-
-```svelte
-<script lang="ts">
-  import Modal from './Modal.svelte';
-
-  let modal: Modal | undefined = $state();
-</script>
-
-<Modal bind:this={modal} />
-```
+For a strongly-typed instance, use the default export's instance type: `let modal: Modal | undefined = $state();`.

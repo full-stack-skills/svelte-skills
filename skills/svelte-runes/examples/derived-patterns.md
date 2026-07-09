@@ -13,6 +13,8 @@
 <p>isBig: {isBig}</p>
 ```
 
+> 派生表达式**必须**纯净：内部不能修改 `$state`（编译器会报错）。
+
 ## 2. $derived.by（复杂逻辑）
 
 ```svelte
@@ -37,6 +39,8 @@
 <p>Total: ${summary.total} ({summary.count} items)</p>
 <p>Expensive items: {expensive.map(i => i.name).join(', ')}</p>
 ```
+
+`$derived(expr)` 实质等价于 `$derived.by(() => expr)`。
 
 ## 3. 解构派生
 
@@ -75,6 +79,8 @@
 
 <button onclick={handleLike}>❤️ {likes}</button>
 ```
+
+声明为 `let` 才能重新赋值；`const` 派生只读。
 
 ## 5. 派生与数组方法
 
@@ -123,18 +129,158 @@
 </script>
 ```
 
-## 8. 派生与异步
+> 条件分支：派生**只追踪上次运行时实际读取的状态**。例如 `if (show) { return count }` 不会追踪 `count` 当 `show` 为 `false` 时。
+
+## 8. 派生与异步（await 后也追踪）
 
 ```svelte
 <script>
   let query = $state('');
 
-  // $derived 中的 async 需注意：
-  // await 之后的同步读取也是依赖
+  // await 之后的同步读取仍是依赖
   let results = $derived.by(async () => {
     if (!query) return [];
     const res = await fetch(`/api?q=${query}`);
     return res.json();
   });
 </script>
+
+{#await results}
+  <p>loading…</p>
+{:then items}
+  <ul>{#each items as i}<li>{i.name}</li>{/each}</ul>
+{:catch e}
+  <p>error: {e.message}</p>
+{/await}
 ```
+
+> 仅 `$derived`/`$effect` 表达式自身的 `await` 会追踪；调用函数中的 `await` 不计入。
+
+## 9. update propagation（push-pull）
+
+派生用"推-拉"模型：依赖变化时**标记为脏**，真正被读取时**才重算**。若新值与旧值引用相同，下游不会更新：
+
+```svelte
+<script>
+  let count = $state(0);
+  let large = $derived(count > 10); // 布尔值
+</script>
+
+<button onclick={() => count++}>
+  <!-- 按钮文本只在 large 变化时重渲染 -->
+  {large}
+</button>
+```
+
+> 派生返回值若是**新对象**，即便内容相同也会触发下游 —— 因此派生里要避免 `() => ({})` 这类写法。
+
+## 10. 用 untrack 排除依赖
+
+```svelte
+<script>
+  import { untrack } from 'svelte';
+
+  let count = $state(0);
+  let theme = $state('light');
+
+  // 只追踪 count
+  let displayCount = $derived.by(() => {
+    const t = untrack(() => theme);
+    return `${t}: ${count}`;
+  });
+</script>
+```
+
+`untrack` 在派生和 effect 中同样适用。
+
+## 11. 派生与代理：mutate selected 改 items
+
+`$derived` 不会把返回值包成代理 —— 它**保留原引用**。所以派生出来再修改属性，会影响到底层的 `$state`：
+
+```svelte
+<script>
+  let items = $state([{ id: 1, name: 'foo' }]);
+  let index = $state(0);
+  let selected = $derived(items[index]);
+
+  function rename() {
+    selected.name = 'bar'; // ✅ 实际改的是 items[0].name
+  }
+</script>
+```
+
+## 12. 用 get/set 派生模拟可写计算属性
+
+```svelte
+<script>
+  let a = $state(1);
+  let b = $state(2);
+
+  let sum = $derived({
+    get value() { return a + b; },
+    set value(v) { a = v - b; }
+  });
+</script>
+
+<button onclick={() => sum.value = 10}>set a=8</button>
+<p>sum: {sum.value}</p>
+```
+
+## 13. 派生链与调试
+
+```svelte
+<script>
+  let count = $state(0);
+  let doubled = $derived(count * 2);
+  let quadrupled = $derived(doubled * 2);
+  let isPositive = $derived(quadrupled > 0);
+
+  // 任一上游变化都会沿链 dirty-mark，按需重算
+</script>
+```
+
+调试：`$inspect` 或 `$inspect.trace()` 配合 effect/derived 使用。
+
+## 14. 派生中不要做的事
+
+```svelte
+<script>
+  let a = $state(1);
+  let b = $state(2);
+
+  // ❌ 表达式内有副作用
+  // let sum = $derived((a = 0, b));  // 编译器报错
+
+  // ❌ 派生里读 $effect
+  // let result = $derived.by(() => {
+  //   let captured;
+  //   $effect(() => { captured = a; });  // 不要这样做
+  //   return captured;
+  // });
+</script>
+```
+
+## 15. 何时用 $derived vs $state
+
+| 场景 | 选 |
+|------|----|
+| 表达"X = f(Y)" | `$derived` |
+| 表达"按下按钮后 Y = X + 1" | `$state`（手动更新）或 `$derived` + 重新赋值（5.25+） |
+| 需要乐观 UI 回滚 | `$derived`（用 `let`） |
+| 跨多个组件共享 | `$state`（封装在类或 `.svelte.js`） |
+
+## 16. 解构 + 默认值
+
+```svelte
+<script>
+  function getConfig() {
+    return { host: '', port: 0, ssl: false };
+  }
+  let config = $state(getConfig());
+
+  // 解构并设默认值
+  let { host, port = 443, ssl = true } = $derived(config);
+</script>
+```
+
+`$derived` 的解构与对象字面量解构语法完全一致。

@@ -310,6 +310,122 @@ Legacy 的事件分发机制（已被 Svelte 5 callback props 取代）：
 4. **`$$slots` 是编译时注入** — 可在 script 中直接使用 `$:` 中引用
 5. **`<svelte:self>` 需要导入** — `import { svelte:self } from 'svelte'`
 
+## Critical: Svelte 4 Migration (Svelte 3 → Svelte 4)
+
+如果你正在维护 Svelte 3 项目并升级到 Svelte 4，下面这些破坏性变更必须逐项核对。详细对照与自动化脚本见 `examples/migration-v4.md` 与 `references/migration-v4-reference.md`，源码基线在 `/tmp/svelte-llms.txt:6182`。
+
+> **推荐起点**：`npx svelte-migrate@latest svelte-4` —— 脚本会自动处理多数条目；其余需要手动介入。
+
+### 最低版本要求
+
+```jsonc
+{
+  "engines": { "node": ">=16" },
+  "devDependencies": {
+    "svelte": "^4.0.0",
+    "@sveltejs/kit": ">=1.20.4",
+    "vite-plugin-svelte": ">=2.4.1",
+    "svelte-loader": ">=3.1.8",
+    "rollup-plugin-svelte": ">=7.1.5",
+    "typescript": ">=5"
+  }
+}
+```
+
+### 主要破坏性变更速查
+
+| 类别 | Svelte 3 | Svelte 4 |
+|------|----------|----------|
+| **Bundler browser condition** | 可选 | Rollup `browser: true` / Webpack `conditionNames: ['browser']` |
+| **CJS 输出** | 支持 | 移除（编译器、`svelte/register`、runtime） |
+| **`createEventDispatcher` 类型** | 可选 payload | 严格：`T \| undefined` 可选；`T` 必填；`null` 禁 detail |
+| **`Action` / `ActionReturn`** | params 隐式 `any` | 必须显式 `Action<HTMLElement, T>` |
+| **`onMount` 异步清理** | 不报错 | 返回 Promise 的清理函数会被忽略（TS 报错） |
+| **Custom Element** | `<svelte:options tag="x" />` | `<svelte:options customElement="x" />`（字符串或对象） |
+| **`SvelteComponentTyped`** | 与 `SvelteComponent` 并存 | 弃用，统一为 `SvelteComponent` |
+| **Transitions 默认范围** | 任意祖先块触发 | 仅直接父块触发，加 `\|global` 恢复旧行为 |
+| **Default slot bindings** | named slot 也可见 | 仅 default slot 可见 |
+| **Preprocessor 顺序** | markup×N, script×N, style×N | markup, script, style ×N（每个 preprocessor 内部三段） |
+| **`eslint-plugin-svelte3`** | 推荐 | 弃用，改 `eslint-plugin-svelte` |
+| **`inert` on outroing** | 不应用 | 默认应用（无障碍改进） |
+| **`classList.toggle`** | 兼容老浏览器 | 需要 polyfill |
+| **`CustomEvent`** | 兼容老浏览器 | 需要 polyfill |
+| **`derived` falsy 值** | 警告 | 抛错 |
+| **`svelte/internal` 类型** | 暴露 | 已移除 |
+| **`svelte.JSX` 命名空间** | 用 | 改 `svelteHTML` / `svelte/elements` |
+| **库作者 `peerDependencies`** | `^3` | `^3 \|\| ^4` |
+
+### 自动化脚本能处理的
+
+- `tag=` → `customElement=`（字符串形式）
+- `SvelteComponentTyped` → `SvelteComponent`
+- `Action` / `ActionReturn` 泛型参数
+- Transitions 默认行为（添加 `|global` 修饰符）
+
+### 需要手动处理的
+
+- Bundler `browser` condition 配置（Rollup / Webpack）
+- 严格类型错误的修复（`createEventDispatcher` payload）
+- `onMount` 异步清理改同步
+- Preprocessor `name` 属性 + 顺序调整
+- ESLint 插件替换 + 配置迁移
+- `derived` falsy 值边界条件
+
+### Custom Element 升级
+
+```svelte
+<!-- v3 --><svelte:options tag="my-counter" />
+<!-- v4 --><svelte:options customElement={{ tag: 'my-counter', props: { initial: { type: Number } } }} />
+```
+
+### onMount 异步清理反模式
+
+```js
+// ❌ v4 报错且永远不清理
+onMount(async () => { const data = await fetch('/api'); setup(data); return () => teardown(); });
+// ✅ 同步返回值
+onMount(() => { fetch('/api').then(setup); return () => teardown(); });
+```
+
+### Preprocessor 顺序：MDsveX 必须最前
+
+```js
+// svelte.config.js
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { mdsvex } from 'mdsvex';
+
+export default {
+  preprocess: [
+    mdsvex({ name: 'mdsvex' }),         // 先 markup 再 script
+    vitePreprocess({ name: 'vite' })
+  ]
+};
+```
+
+> v3：所有 markup → 所有 script → 所有 style。v4：每个 preprocessor 内部 markup → script → style，再下一个。每个 preprocessor 必须声明 `name`。
+
+### 库作者的 peerDependencies
+
+```jsonc
+{
+  "peerDependencies": { "svelte": "^3.0.0 || ^4.0.0" },
+  "devDependencies": { "svelte": "^4.0.0" }
+}
+```
+
+### Run-it-Yourself Checklist
+
+```bash
+npm install svelte@^4                    # 1. 升级依赖
+npx svelte-migrate@latest svelte-4       # 2. 跑迁移脚本
+npx svelte-check                          # 3. 看 TypeScript
+npm test                                   # 4. 跑测试
+```
+
+如大量出现 `Action` 泛型错误，说明 migration 脚本漏掉；手动补 `<HTMLElement, YourType>`。
+
+> 进一步 v5 迁移在 svelte-runes / svelte-misc 中；本技能只覆盖 Svelte 4 升级。
+
 ## Quick Fixes
 
 | 问题 | 解决 |
@@ -333,6 +449,19 @@ A: 功能相似，但 `$derived` 是 Svelte 5 的 Runes API，更显式和可控
 **Q: Slot 和 Snippet 哪个更好？**
 A: Snippets 更强大灵活。Slot 适合简单内容传递；Snippet 可接收参数、可在定义处使用、类型安全更好。
 
+## Cross-References
+
+本技能是 Svelte Legacy 维护专用，与以下技能协同：
+
+- Svelte 5 入口与学习路径 → `../svelte-awesome/`
+- Svelte 4 → Svelte 5 迁移对照 → `../svelte-misc/`（migration 章节）
+- Runes 响应式（`$state` / `$derived` / `$effect`）→ `../svelte-runes/`
+- Stores（writable / readable / derived）→ `../svelte-lifecycle/`
+- 模板语法（snippet / event / bind）→ `../svelte-template-syntax/`
+- 调试响应式不更新 / `$inspect` → `../svelte-lifecycle/`
+- 把组件编译为 Web Component → `../svelte-misc/`（Custom Elements 章节）
+- 初始化与迁移脚本 → `../svelte-cli/`（`sv migrate svelte-5`）
+
 ## Examples
 
 Practical examples for working with Legacy APIs:
@@ -341,6 +470,7 @@ Practical examples for working with Legacy APIs:
 - [examples/migration-scripts.md](./examples/migration-scripts.md) - Migration workflows (svelte-migrate, let→$state, $:→$derived, etc.)
 - [examples/legacy-mode.md](./examples/legacy-mode.md) - Legacy mode usage, mixing legacy and runes
 - [examples/store-comparison.md](./examples/store-comparison.md) - Store patterns in Svelte 4 and Svelte 5
+- [examples/migration-v4.md](./examples/migration-v4.md) - Svelte 3 → Svelte 4 迁移 12 个实战示例（bundler 配置、严格类型、Custom Element、transition、slot、preprocessor 等）
 
 ## References
 
@@ -350,3 +480,4 @@ Complete reference documentation:
 - [references/migration-reference.md](./references/migration-reference.md) - Complete migration reference with before/after code
 - [references/legacy-mode-reference.md](./references/legacy-mode-reference.md) - Legacy mode behavior and limitations
 - [references/store-reference.md](./references/store-reference.md) - Store API reference (writable, readable, derived, custom stores)
+- [references/migration-v4-reference.md](./references/migration-v4-reference.md) - Svelte 3 → Svelte 4 完整对照参考（最低版本、bundler、严格类型、Custom Element、slot、preprocessor、其他 breaking change、库作者指引）

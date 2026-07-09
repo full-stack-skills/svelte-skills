@@ -120,6 +120,8 @@ counterState.count = 0;
 
 ## Critical: Lifecycle Hooks
 
+> **Mental model**: Svelte 5 的生命周期只有两个阶段 —— **创建** 与 **销毁**。中间的"状态更新"由 **effect** 处理，因为响应式的最小单位是 effect，不是组件。所以没有 `beforeUpdate`/`afterUpdate` 钩子。
+
 ### onMount
 
 组件挂载到 DOM 后执行（SSR 时不运行）：
@@ -134,7 +136,7 @@ counterState.count = 0;
 </script>
 ```
 
-> 返回的函数在组件卸载时调用；如果传入 async 函数则清理函数不会被调用。
+> 返回的函数在组件卸载时调用；如果传入 async 函数则清理函数不会被调用（async 函数总是返回 `Promise`）。需要异步任务 + 清理时，用 IIFE 包裹，外部箭头函数同步返回清理函数。
 
 ### onDestroy
 
@@ -162,6 +164,19 @@ counterState.count = 0;
   });
 </script>
 ```
+
+### 生命周期与 mount/unmount/hydrate 的配合
+
+| 阶段 | mount() | hydrate() | render() (SSR) | unmount() |
+|---|---|---|---|---|
+| 同步：组件 script、state、模板 | ✓ | ✓ | ✓ | — |
+| 同步：插入 DOM / 输出字符串 | ✓ 替换 target | ✓ 复用 SSR DOM | ✓ 返回 head+body | — |
+| 微任务：`$effect` / `onMount` 触发 | ✓ | ✓ | ✗ | — |
+| 同步：清理 effect + onDestroy | — | — | ✓（render 完成后） | ✓ |
+| 异步：过渡 (outro) | — | — | — | `outro:true` 时等待 |
+
+> `mount()` 返回时 effect 和 `onMount` 都还没跑；要立刻让它们跑就 `flushSync()`。`hydrate()` 同理。
+> `tick()` 和 `flushSync()` 在服务端是 no-op（没有响应式调度）。
 
 ## Critical: Imperative Component API
 
@@ -214,11 +229,32 @@ SSR 时序列化数据，客户端水合时复用（避免重复请求）：
 
 ### CSP 支持
 
+`hydratable()` 会在 `render()` 返回的 `head` 中嵌入一段 inline `<script>`。CSP 默认会拦截它，需要用 nonce 或 hash 放行：
+
 ```js
+// 动态 SSR：每请求一个 nonce
+const nonce = crypto.randomUUID();
 const { head, body } = await render(App, {
-  csp: { nonce: 'xxx' } // 或 hash: true
+  csp: { nonce }
 });
+// 响应头同步加上：
+// Content-Security-Policy: script-src 'self' 'nonce-${nonce}'
 ```
+
+```js
+// 静态 SSG：使用 hash
+const { head, body, hashes } = await render(App, {
+  csp: { hash: true }
+});
+// Content-Security-Policy: script-src ${hashes.script.map(h => `'${h}'`).join(' ')}
+```
+
+**重要**：
+
+- 没用 `hydratable()` 时 `render()` 不输出 inline `<script>`，CSP 严格模式不会拦截任何东西。
+- inline 事件处理器（`<button onclick={...}>`）不是 `<script>` 标签，不需要 nonce。
+- 推荐 nonce 模式，hash 模式将来会和 streaming SSR 冲突。
+- 详见 [references/csp-reference.md](./references/csp-reference.md)。
 
 ## Critical: Best Practices
 
@@ -384,10 +420,13 @@ flushSync();
 | 问题 | 解决方案 |
 |------|----------|
 | 状态在组件间不同步 | 用 Context（跨层级）或 `.svelte.js`（全局） |
-| onMount 清理不执行 | 确保传入同步函数（不是 async） |
+| onMount 清理不执行 | 确保传入同步函数（不是 async），需要异步时用 IIFE 包裹 |
 | SSR 后组件不交互 | 用 `hydrate` 而非 `mount` |
 | 测试中状态不更新 | 用 `flushSync()` 强制同步执行 |
 | Context 断开链接 | 不要重新赋值整个 Context 对象 |
+| mount 后 effect 没运行 | `mount()` 同步返回，但 effect 在下一个 microtask 才跑；需要立刻跑就 `flushSync()` |
+| CSP 阻止 hydratable 脚本 | 用 `csp: { nonce }`（动态）或 `csp: { hash: true }`（静态），并在响应头里同步声明 |
+| 异步 onMount 拿不到清理 | 外部箭头同步 `return () => controller.abort()`，async 逻辑放 IIFE 里面 |
 
 ## Gotchas
 
@@ -396,6 +435,10 @@ flushSync();
 3. **`mount` 不运行 `$effect`** — effects 在组件挂载后由 microtask 触发
 4. **测试中 `$effect.root`** — 涉及 effects 的测试需要 `$effect.root()` 包裹
 5. **`render` 只在 SSR 环境可用** — 客户端用 `mount`
+6. **async `onMount` 的清理会被忽略** — async 函数永远返回 Promise，Svelte 拿不到清理函数；用 IIFE 模式
+7. **`hydrate()` 不会同步运行 effect** — 跟 `mount()` 一样，hydration 后要用 `flushSync()` 让 effect 跑起来
+8. **CSP nonce 是一次性的** — 每请求一个新 nonce；hash 模式与未来的 streaming SSR 冲突
+9. **hydration 随机值会不匹配** — `Math.random()` / `Date.now()` 在 SSR 和 CSR 不同；用 `hydratable()` 包裹
 
 ## FAQ
 
@@ -405,11 +448,20 @@ A: Store：跨全应用共享的简单值；Context：组件树局部共享；`.
 **Q: `tick` 和 `await Promise.resolve()` 有什么区别？**
 A: `tick()` 保证在 DOM 更新后解析，`Promise.resolve()` 不等待 Svelte 的更新周期。
 
+**Q: `tick()` 和 `flushSync()` 怎么选？**
+A: `await tick()` 适合异步用户代码；`flushSync()` 适合测试和需要立即同步 DOM 的外部库同步场景。
+
 **Q: 如何测试带有 `$effect` 的代码？**
 A: 用 `flushSync()` 强制执行，使用 `$effect.root()` 包裹测试代码。
 
 **Q: SSR 后 hydration 报错？**
 A: 确保 SSR 和 CSR 的 HTML 结构一致；用 `hydrate` 而非 `mount`。
+
+**Q: 什么时候用 `onMount` vs `$effect`？**
+A: `onMount` 是"挂载后跑一次"的副作用；`$effect` 是"依赖变化就重跑"的反应式副作用。
+
+**Q: `hydrate` 的 inline 脚本被 CSP 阻止了怎么办？**
+A: 用 `csp: { nonce }` 在 render 时给脚本打上 nonce，并在响应头同步声明；静态站点用 `csp: { hash: true }` 拿 `hashes.script`。
 
 ## Examples
 
@@ -420,6 +472,8 @@ Practical examples demonstrating Svelte 5's runtime APIs.
 | [examples/README.md](./examples/README.md) | Entry point with quick reference |
 | [examples/mount-hydrate.md](./examples/mount-hydrate.md) | 9 examples: mount, unmount, hydrate, render, flushSync, tick |
 | [examples/ssr-patterns.md](./examples/ssr-patterns.md) | SSR patterns: async render, streaming, hydration, CSP |
+| [examples/onmount-tick.md](./examples/onmount-tick.md) | 15 lifecycle examples: onMount (sync/async/cleanup), onDestroy, tick for focus/measure/scroll, $effect.pre pattern |
+| [examples/csp-examples.md](./examples/csp-examples.md) | 8 CSP examples: nonce (Express/SvelteKit/Cloudflare), hash (SSG), diagnostic tips |
 
 ## References
 
@@ -430,3 +484,5 @@ In-depth technical references for Svelte 5's runtime APIs.
 | [references/README.md](./references/README.md) | Entry point with quick reference |
 | [references/mount-unmount-reference.md](./references/mount-unmount-reference.md) | Deep dive: mount/unmount/hydrate lifecycle, flushSync, tick |
 | [references/ssr-reference.md](./references/ssr-reference.md) | SSR deep dive: render, async SSR, CSP, hydration |
+| [references/lifecycle-runtime-reference.md](./references/lifecycle-runtime-reference.md) | Lifecycle in mount/hydrate runtime: when effects run, onMount timing, tick vs flushSync, SSR phase matrix |
+| [references/csp-reference.md](./references/csp-reference.md) | CSP nonce vs hash, runtime configuration, streaming compatibility |

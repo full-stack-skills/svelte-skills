@@ -1,6 +1,6 @@
 # Svelte Runtime Examples
 
-Practical examples demonstrating Svelte 5's runtime APIs for mount/unmount, hydration, SSR, and component lifecycle management.
+Practical examples demonstrating Svelte 5's runtime APIs for mount/unmount, hydration, SSR, lifecycle hooks, and CSP.
 
 ## Examples Overview
 
@@ -8,6 +8,8 @@ Practical examples demonstrating Svelte 5's runtime APIs for mount/unmount, hydr
 |---------|-------------|
 | [mount-hydrate.md](./mount-hydrate.md) | Mount, unmount, hydrate, and render APIs with 9 practical examples |
 | [ssr-patterns.md](./ssr-patterns.md) | Server-side rendering patterns including streaming, async SSR, and hydration |
+| [onmount-tick.md](./onmount-tick.md) | 15 lifecycle examples: onMount (sync/async/cleanup/AbortController), onDestroy, tick for focus/measure, $effect.pre chat autoscroll |
+| [csp-examples.md](./csp-examples.md) | 8 CSP examples: nonce for Express/SvelteKit/Cloudflare, hash for SSG, runtime configuration |
 
 ## Quick Reference
 
@@ -24,7 +26,7 @@ unmount(app, { outro: true });
 const app = hydrate(App, { target: document.body });
 
 // Server-side render
-const { head, body } = await render(App, { props: { data } });
+const { head, body, hashes } = await render(App, { props: { data }, csp: { nonce } });
 
 // Force sync updates in tests
 flushSync();
@@ -37,3 +39,5 @@ await tick();
 
 - **Getting Started**: [mount-hydrate.md](./mount-hydrate.md)
 - **SSR Patterns**: [ssr-patterns.md](./ssr-patterns.md)
+- **Lifecycle Hooks**: [onmount-tick.md](./onmount-tick.md)
+- **CSP**: [csp-examples.md](./csp-examples.md)
