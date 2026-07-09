@@ -24,7 +24,21 @@
 
 **Svelte 技能** 是一组 AI 编码智能体技能，属于 [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) 生态，由 [PartMe.AI](https://github.com/partme-ai) 维护。
 
-本包包含 **1 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。
+本包包含 **16 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。
+
+## 🔗 官方文档入口
+
+强烈建议将这些技能与官方 Svelte 文档一同阅读：
+
+- [Svelte Overview](https://svelte.dev/docs/svelte/overview) — Svelte 5 入门与核心概念
+- [Svelte LLMs.txt](https://svelte.dev/llms.txt) — Svelte 5 完整 LLM 文档（17500+ 行，覆盖 Svelte + SvelteKit + CLI + AI 四套文档集）
+
+分包的官方文档：
+
+- [Svelte 5 文档](https://svelte.dev/docs/svelte/llms.txt)
+- [SvelteKit 文档](https://svelte.dev/docs/kit/llms.txt)
+- [Svelte CLI 文档](https://svelte.dev/docs/cli/llms.txt)
+- [Svelte AI 文档](https://svelte.dev/docs/ai/llms.txt)
 
 ## 📦 安装
 
@@ -38,11 +52,26 @@ npx skills add full-stack-skills/svelte-skills
 npx skills add full-stack-skills/svelte-skills --skill <skill-name>
 ```
 
-## 🎯 技能列表 (1)
+## 🎯 技能列表 (16)
 
 | 技能 | 描述 |
 |------|------|
-| `svelte` | Provides comprehensive guidance for Svelte framework including components, reactivity, stores, transitions, and compi... |
+| `svelte-awesome` | Svelte 5 导航入口，覆盖 8 个子技能（runes/template syntax/styling/special elements/runtime/misc/reference/legacy APIs）以及 SvelteKit、CLI、AI 工具 |
+| `svelte-runes` | Svelte 5 Runes 响应式系统：$state / $derived / $effect / $props / $bindable / $inspect / $host 完整参考 |
+| `svelte-template-syntax` | 块语法 (`#if` / `#each` / `#await` / `#snippet` / `#key`)、`{@render}` / `{@html}` / `{@attach}` / `{@debug}`、`bind:` 指令、events、use:、transition:、animate:、style:、class |
+| `svelte-styling` | Scoped Styles、`:global`、`@keyframes`、`style:`、class 指令、`:where()`、Tailwind 集成 |
+| `svelte-special-elements` | `<svelte:boundary>` / `<svelte:window>` / `<svelte:document>` / `<svelte:body>` / `<svelte:head>` / `<svelte:element>` / `<svelte:options>` |
+| `svelte-runtime` | imperative API（mount/unmount/render/hydrate）、服务端渲染、CSP、生命周期与 mount/hydrate 协作 |
+| `svelte-misc` | TypeScript（泛型、Component 类型、DOM 类型增强）、Custom Elements、Best Practices、Browser Support、Svelte 4 迁移 |
+| `svelte-reference` | `use:` Action、tweened/spring 运动、`transition:` / `in:` / `out:` / `animate:`、完整 store 工具集 |
+| `svelte-legacy-apis` | Svelte 4 → 5 迁移、Legacy Mode（`<svelte:options runes={false}>`）、保留可用的旧 API（export let / $: / on:click / slot / createEventDispatcher） |
+| `svelte-lifecycle` | 生命周期钩子（onMount/onDestroy/tick）、Stores（writable/readable/derived）、Context API、Testing（Vitest/Storybook/Playwright）、Browser support |
+| `sveltekit-overview` | SvelteKit 概览、创建项目、项目类型决策矩阵、项目结构、Web 标准（Fetch/FormData/Stream/URL/Web Crypto）、Routing（+page/+layout/+server/+error/$types） |
+| `sveltekit-data` | 数据加载（universal/server load）、page.data、URL data、Cookies/Headers、Errors/Redirects、Streaming、Form actions、use:enhance、Page options（prerender/ssr/csr） |
+| `sveltekit-advanced` | State management（SSR 安全）、Remote functions（query/form/command）、Env vars（$env/*）、Hooks（handle/sequence）、Errors、Link options、Service workers、$app/* 模块、$lib、shallow routing |
+| `sveltekit-config` | 构建（vite build/preview）、Adapters（node/static/cloudflare/netlify/vercel）、Advanced routing/layouts、Auth、Performance、Images（@sveltejs/enhanced-img）、A11y、SEO、Migration（v1→v2、Sapper→SvelteKit） |
+| `svelte-cli` | `sv` CLI：`sv create` 创建项目、`sv add` 添加 13 个官方集成、`sv check` 类型与编译检查、`sv migrate` 迁移脚本、`sv-utils` 低级 API |
+| `svelte-ai` | Svelte AI 工具：AGENTS.md 规范、MCP server（list-sections/get-documentation/svelte-autofixer/playground-link）、Prompts（svelte-task）、CLI、Subagents（svelte-code-writer/svelte-core-bestpractices）、11+ AI 客户端安装 |
 
 ## 🤖 支持的智能体
 
