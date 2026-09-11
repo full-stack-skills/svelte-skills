@@ -1,5 +1,6 @@
 ---
 name: sveltekit-config
+license: Apache-2.0
 description: SvelteKit 配置/构建/部署/性能技能。当用户配置 adapter（node/static/cloudflare/netlify/vercel）、使用 advanced routing/layouts、优化性能（代码分割/asset/hydration）、处理 images（@sveltejs/enhanced-img）、实现 accessibility/SEO、调试 SvelteKit 应用、从 SvelteKit v1/Sapper 迁移时使用。
 ---
 

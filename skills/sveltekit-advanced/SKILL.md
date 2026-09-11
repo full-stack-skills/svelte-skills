@@ -1,5 +1,6 @@
 ---
 name: sveltekit-advanced
+license: Apache-2.0
 description: SvelteKit 高级功能指南 - 状态管理、远程函数(Remote Functions)、环境变量、Hooks、错误处理、链接选项、Service Workers、服务端模块、快照(快照/Shallow Routing)、$app/* 模块、$lib、$service-worker。
 ---
 

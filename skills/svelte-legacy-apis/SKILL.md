@@ -1,5 +1,6 @@
 ---
 name: svelte-legacy-apis
+license: Apache-2.0
 description: Svelte 5 Legacy API 技能。当用户需要维护或迁移 Svelte 4 代码，理解 Reactive let/$:/export let/Slots/createEventDispatcher/$$props 等已废弃但仍可用的 Legacy API 时使用。
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: svelte-ai
+license: Apache-2.0
 description: Svelte AI 助手集成技能。当用户为 Claude Code/Cursor/Copilot/Codex/OpenCode/VS Code 等 AI 编程工具配置 Svelte MCP server、安装 svelte-autofixer/list-sections/get-documentation MCP tools、使用 svelte-task 提示、调用 sv CLI（svelte-ai CLI）、或利用 svelte-code-writer/svelte-core-bestpractices 子智能体编写 Svelte 5 代码时使用。
 ---
 

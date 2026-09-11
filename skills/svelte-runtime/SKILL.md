@@ -1,5 +1,6 @@
 ---
 name: svelte-runtime
+license: Apache-2.0
 description: Svelte 5 运行时技能。当用户需要使用 Stores、Context、生命周期钩子（onMount/onDestroy/tick）、命令式组件 API（mount/unmount/render/hydrate）、Hydratable Data、Best Practices 或 Vitest 测试时使用。
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: svelte-runes
+license: Apache-2.0
 description: Svelte 5 Runes 响应式系统技能。当用户需要使用 $state/$derived/$effect/$props/$bindable/$inspect/$host 等符文，或理解 Svelte 5 显式响应式与 Svelte 4 隐式响应式的区别时使用。
 ---
 

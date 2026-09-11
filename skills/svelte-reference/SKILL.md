@@ -1,5 +1,6 @@
 ---
 name: svelte-reference
+license: Apache-2.0
 description: Svelte 5 API 参考技能。当用户需要查阅 svelte/action、svelte/store、svelte/transition、svelte/animate、svelte/easing、svelte/compiler、svelte/events 的具体 API，或需要查看编译器错误/警告代码时使用。
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: svelte-misc
+license: Apache-2.0
 description: Svelte 5 杂项技能。当用户需要了解 TypeScript 支持、自定义元素、浏览器兼容性、Svelte 4→5 迁移、FAQ 时使用。
 ---
 

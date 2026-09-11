@@ -1,5 +1,6 @@
 ---
 name: svelte-lifecycle
+license: Apache-2.0
 description: Svelte 5 生命周期、Stores、Context、Testing 技能。当用户需要在 Svelte 5 中使用 onMount/onDestroy/tick 生命周期钩子、使用 writable/derived stores 管理状态、使用 createContext 共享组件树状态、编写 Vitest/Storybook/Playwright 测试时使用。
 ---
 

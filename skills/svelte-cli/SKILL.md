@@ -1,5 +1,6 @@
 ---
 name: svelte-cli
+license: Apache-2.0
 description: Svelte CLI（sv）技能。当用户使用 sv 创建项目（sv create）、添加集成（sv add 如 drizzle/tailwind/prettier/eslint/playwright/storybook/vitest/mdsvex/paraglide/better-auth/sveltekit-adapter/mcp/experimental）、运行类型和编译检查（sv check）、运行迁移脚本（sv migrate svelte-5/sveltekit-2/app-state/self-closing-tags/package/routes）、或开发自定义 sv add-on 时使用。
 ---
 
