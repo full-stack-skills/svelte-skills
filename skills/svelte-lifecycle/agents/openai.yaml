@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Lifecycle"
+  short_description: "Svelte 5 生命周期、Stores、Context、Testing 技能"
+  default_prompt: "使用 $svelte-lifecycle，围绕“Svelte 5 生命周期、Stores、Context、Testing 技能”处理我的当前需求。"

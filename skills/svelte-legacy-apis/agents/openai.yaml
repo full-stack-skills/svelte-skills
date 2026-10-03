@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Legacy Apis"
+  short_description: "Svelte 5 Legacy API 技能。当用户需要维护或迁移 Svelte 4 代码，理解 Reactive let/$…"
+  default_prompt: "使用 $svelte-legacy-apis，围绕“Svelte 5 Legacy API 技能。当用户需要维护或迁移 Svelte 4 代码，理解 Reactive let/$”处理我的当前需求。"

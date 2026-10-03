@@ -1,0 +1,4 @@
+interface:
+  display_name: "SvelteKit Advanced"
+  short_description: "SvelteKit 高级功能指南 - 状态管理、远程函数(Remote Functions)、环境变量、Hooks、错误处理、…"
+  default_prompt: "使用 $sveltekit-advanced，围绕“SvelteKit 高级功能指南 - 状态管理、远程函数(Remote Functions)、环境变量、Hooks、错误处理”处理我的当前需求。"

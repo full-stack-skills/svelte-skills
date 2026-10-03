@@ -1,0 +1,4 @@
+interface:
+  display_name: "SvelteKit Config"
+  short_description: "SvelteKit 配置/构建/部署/性能技能。当用户配置 adapter（…"
+  default_prompt: "使用 $sveltekit-config，围绕“SvelteKit 配置/构建/部署/性能技能。当用户配置 adapter（”处理我的当前需求。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Ai"
+  short_description: "Svelte AI 助手集成技能。当用户为 Claude Code/Cursor/Copilot/Codex/OpenCode…"
+  default_prompt: "使用 $svelte-ai，围绕“Svelte AI 助手集成技能。当用户为 Claude Code/Cursor/Copilot/Codex/OpenCode”处理我的当前需求。"

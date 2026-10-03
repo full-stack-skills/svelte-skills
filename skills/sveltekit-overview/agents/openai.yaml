@@ -1,0 +1,4 @@
+interface:
+  display_name: "SvelteKit Overview"
+  short_description: "SvelteKit 概览、创建项目、项目类型、项目结构、Web 标准、Routing 技能"
+  default_prompt: "使用 $sveltekit-overview，围绕“SvelteKit 概览、创建项目、项目类型、项目结构、Web 标准、Routing 技能”处理我的当前需求。"

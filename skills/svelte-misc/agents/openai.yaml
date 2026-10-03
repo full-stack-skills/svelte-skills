@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Misc"
+  short_description: "Svelte 5 杂项技能。当用户需要了解 TypeScript 支持、自定义元素、浏览器兼容性、Svelte 4→5 迁移、…"
+  default_prompt: "使用 $svelte-misc，围绕“Svelte 5 杂项技能。当用户需要了解 TypeScript 支持、自定义元素、浏览器兼容性、Svelte 4→5 迁移”处理我的当前需求。"

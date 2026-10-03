@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Runtime"
+  short_description: "Svelte 5 运行时技能。当用户需要使用 Stores、Context、生命周期钩子（onMount/onDestroy/…"
+  default_prompt: "使用 $svelte-runtime，围绕“Svelte 5 运行时技能。当用户需要使用 Stores、Context、生命周期钩子（onMount/onDestroy/”处理我的当前需求。"

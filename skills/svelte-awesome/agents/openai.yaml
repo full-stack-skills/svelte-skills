@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Awesome"
+  short_description: "Svelte 5 入门与导航技能。当用户需要了解 Svelte 5 全貌、选择合适的学习路径、或需要本技能的 8 个子技能协同…"
+  default_prompt: "使用 $svelte-awesome，围绕“Svelte 5 入门与导航技能。当用户需要了解 Svelte 5 全貌、选择合适的学习路径、或需要本技能的 8 个子技能协同”处理我的当前需求。"

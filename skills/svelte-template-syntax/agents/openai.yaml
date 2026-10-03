@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Template Syntax"
+  short_description: "Svelte 5 模板语法技能。当用户需要使用 {#if}/{#each}/{#await}/{#snippet} 等块级语法…"
+  default_prompt: "使用 $svelte-template-syntax，围绕“Svelte 5 模板语法技能。当用户需要使用 {#if}/{#each}/{#await}/{#snippet} 等块级语法”处理我的当前需求。"

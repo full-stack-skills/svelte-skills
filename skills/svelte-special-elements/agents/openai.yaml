@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Special Elements"
+  short_description: "Svelte 5 特殊元素技能。当用户需要使用 svelte:boundary、svelte:window、svelte…"
+  default_prompt: "使用 $svelte-special-elements，围绕“Svelte 5 特殊元素技能。当用户需要使用 svelte:boundary、svelte:window、svelte”处理我的当前需求。"

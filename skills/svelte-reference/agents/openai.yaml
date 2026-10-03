@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Reference"
+  short_description: "Svelte 5 API 参考技能。当用户需要查阅 svelte/action、svelte/store、…"
+  default_prompt: "使用 $svelte-reference，围绕“Svelte 5 API 参考技能。当用户需要查阅 svelte/action、svelte/store”处理我的当前需求。"

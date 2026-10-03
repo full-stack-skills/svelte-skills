@@ -1,0 +1,4 @@
+interface:
+  display_name: "Svelte Runes"
+  short_description: "Svelte 5 Runes 响应式系统技能。当用户需要使用 $state/$derived/$effect/$props/$…"
+  default_prompt: "使用 $svelte-runes，围绕“Svelte 5 Runes 响应式系统技能。当用户需要使用 $state/$derived/$effect/$props/$”处理我的当前需求。"

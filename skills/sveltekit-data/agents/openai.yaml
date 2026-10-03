@@ -1,0 +1,4 @@
+interface:
+  display_name: "SvelteKit Data"
+  short_description: "SvelteKit 数据加载、表单、页面选项技能。当用户在 SvelteKit 中使用 +page.js/+page.…"
+  default_prompt: "使用 $sveltekit-data，围绕“SvelteKit 数据加载、表单、页面选项技能。当用户在 SvelteKit 中使用 +page.js/+page.”处理我的当前需求。"
